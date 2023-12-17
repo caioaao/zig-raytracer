@@ -1,6 +1,8 @@
 const std = @import("std");
 const Vec3 = @import("./vec3.zig").Vec3;
 const RGB = @import("./color.zig").RGB;
+const AspectRatio = @import("./camera.zig").AspectRatio;
+const Camera = @import("./camera.zig").Camera;
 
 pub fn main() !void {
     // stdout is for the actual output of your application, for example if you
@@ -10,25 +12,9 @@ pub fn main() !void {
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer();
 
-    const img_width = 256;
-    const img_height = 256;
+    const camera = Camera.init(400, AspectRatio{ .x = 16.0, .y = 9.0 });
 
-    try stdout.print("P3\n{d} {d}\n255\n", .{ img_width, img_height });
-
-    for (0..img_height) |j| {
-        std.debug.print("Scanlines remaining: {d}\n", .{img_height - j});
-        for (0..img_width) |i| {
-            const v = Vec3{
-                .x = @as(f64, @floatFromInt(i)) / (img_width - 1),
-                .y = @as(f64, @floatFromInt(j)) / (img_height - 1),
-                .z = 0,
-            };
-            const pixel_color = vecToRGB(v);
-            try pixel_color.printPPM(stdout);
-        }
-    }
-
-    std.debug.print("Done.\n", .{});
+    try camera.renderPPM(stdout);
 
     try bw.flush();
 }
