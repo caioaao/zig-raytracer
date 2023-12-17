@@ -18,7 +18,19 @@ pub const Ray = struct {
         return self.origin.add(self.direction.scale(t));
     }
 
-    pub fn color(_: Ray) RGB {
-        return RGB{ .r = 0.0, .g = 0.0, .b = 0.0 };
+    pub fn color(self: Ray) RGB {
+        const a = self.direction.y * 0.5 + 0.5;
+        return RGB{
+            .r = byteFromRatio((1.0 - a) + a * 0.5),
+            .g = byteFromRatio((1.0 - a) + a * 0.7),
+            .b = byteFromRatio((1.0 - a) + a * 1.0),
+        };
     }
 };
+
+fn byteFromRatio(ratio: f64) u8 {
+    const scaled: u32 = @intFromFloat(255.999 * ratio);
+    const truncated: u8 = @truncate(scaled);
+
+    return truncated;
+}

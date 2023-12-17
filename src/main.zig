@@ -19,20 +19,6 @@ pub fn main() !void {
     try bw.flush();
 }
 
-fn vecToRGB(v: Vec3) RGB {
-    return RGB{
-        .r = byteFromRatio(v.x),
-        .g = byteFromRatio(v.y),
-        .b = byteFromRatio(v.z),
-    };
-}
-
-fn byteFromRatio(ratio: f64) u8 {
-    const scaled: u32 = @intFromFloat(255.999 * ratio);
-    const truncated: u8 = @truncate(scaled);
-
-    return truncated;
-}
 test "simple test" {
     var list = std.ArrayList(i32).init(std.testing.allocator);
     defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
