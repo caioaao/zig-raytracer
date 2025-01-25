@@ -30,7 +30,7 @@ pub const Vec3 = packed struct {
     }
 
     pub fn length(self: Vec3) f64 {
-        return std.math.sqrt(self.lengthSquared);
+        return std.math.sqrt(self.lengthSquared());
     }
 
     pub fn lengthSquared(self: Vec3) f64 {
@@ -50,7 +50,7 @@ pub const Vec3 = packed struct {
     }
 
     pub fn normalize(self: Vec3) Vec3 {
-        return self.scale(1.0 / self.length);
+        return self.scale(1.0 / self.length());
     }
 };
 
