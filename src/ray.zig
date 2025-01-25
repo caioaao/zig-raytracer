@@ -40,13 +40,13 @@ pub const Ray = struct {
 
     pub fn hitSphere(self: Ray, center: Point3, radius: f64) f64 {
         const oc = center.sub(self.origin);
-        const a = Vec3.dot(self.direction, self.direction);
-        const b = -2.0 * Vec3.dot(self.direction, oc);
-        const c = Vec3.dot(oc, oc) - radius * radius;
-        const discriminant = b * b - 4 * a * c;
+        const a = self.direction.lengthSquared();
+        const h = Vec3.dot(self.direction, oc);
+        const c = oc.lengthSquared() - radius * radius;
+        const discriminant = h * h - a * c;
 
         if (discriminant < 0) return -1.0;
-        return (-b - std.math.sqrt(discriminant)) / (2.0 * a);
+        return (h - std.math.sqrt(discriminant)) / a;
     }
 };
 
