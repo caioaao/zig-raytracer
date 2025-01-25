@@ -11,6 +11,14 @@ pub const RGB = packed struct {
     pub fn printPPM(self: RGB, writer: anytype) !void {
         try writer.print("{d} {d} {d}\n", .{ self.r, self.g, self.b });
     }
+
+    pub fn newFromRatios(r: f64, g: f64, b: f64) RGB {
+        return .{
+            .r = byteFromRatio(r),
+            .g = byteFromRatio(g),
+            .b = byteFromRatio(b),
+        };
+    }
 };
 
 fn byteFromRatio(ratio: f64) u8 {
