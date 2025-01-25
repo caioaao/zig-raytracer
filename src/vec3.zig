@@ -52,6 +52,10 @@ pub const Vec3 = packed struct {
     pub fn normalize(self: Vec3) Vec3 {
         return self.scale(1.0 / self.length());
     }
+
+    pub fn reverse(self: Vec3) Vec3 {
+        return self.scale(-1);
+    }
 };
 
 pub const Point3 = Vec3;
