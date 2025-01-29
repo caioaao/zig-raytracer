@@ -40,8 +40,9 @@ pub const Camera = struct {
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
     pixel00_loc: Point3,
+    rand: std.Random,
 
-    pub fn init(image_width_: u32, aspect_ratio_: AspectRatio) Camera {
+    pub fn init(image_width_: u32, aspect_ratio_: AspectRatio, rand: std.Random) Camera {
         const image_height_ = deriveImageHeight(image_width_, aspect_ratio_);
         const viewport = Viewport.new(
             2.0 * @as(f64, @floatFromInt(image_width_)) / @as(f64, @floatFromInt(image_height_)),
@@ -64,6 +65,7 @@ pub const Camera = struct {
             .pixel_delta_u = pixel_delta_u,
             .pixel_delta_v = pixel_delta_v,
             .pixel00_loc = viewport_upper_left.add(pixel_delta_u.scale(0.5)).add(pixel_delta_v.scale(0.5)),
+            .rand = rand,
         };
     }
 
@@ -104,7 +106,11 @@ pub const Camera = struct {
     }
 
     fn getRay(self: Camera, i: usize, j: usize) Ray {
-        const pixel_center = self.pixel00_loc.add(self.pixel_delta_u.scale(@as(f64, @floatFromInt(i)))).add(self.pixel_delta_v.scale(@as(f64, @floatFromInt(j))));
+        const jitter_offset = Vec3.new(self.rand.float(f64) - 0.5, self.rand.float(f64) - 0.5, 0.0);
+        const pixel_center = self.pixel00_loc
+            .add(self.pixel_delta_u.scale(@as(f64, @floatFromInt(i)) + jitter_offset.x))
+            .add(self.pixel_delta_v.scale(@as(f64, @floatFromInt(j)) + jitter_offset.y));
+
         return Ray{ .origin = self.center, .direction = pixel_center.sub(self.center) };
     }
 };

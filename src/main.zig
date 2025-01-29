@@ -17,6 +17,13 @@ pub fn main() !void {
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer().any();
 
+    var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+    const rand = prng.random();
+
     var world = HittableList.init(allocator);
     defer world.deinit();
 
@@ -26,7 +33,7 @@ pub fn main() !void {
     try world.add(sphere1.hittable());
     try world.add(sphere2.hittable());
 
-    const camera = Camera.init(400, AspectRatio{ .x = 16.0, .y = 9.0 });
+    const camera = Camera.init(400, AspectRatio{ .x = 16.0, .y = 9.0 }, rand);
 
     try camera.renderPPM(world.hittable(), stdout);
 
