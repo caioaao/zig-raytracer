@@ -55,7 +55,7 @@ pub const Camera = struct {
         );
     }
 
-    pub fn renderPPM(self: Camera, world: Hittable, writer: anytype) !void {
+    pub fn renderPPM(self: Camera, world: Hittable, writer: std.io.AnyWriter) !void {
         const viewport_u = Vec3{ .x = self.viewport.width, .y = 0.0, .z = 0.0 };
         const viewport_v = Vec3{ .x = 0.0, .y = -self.viewport.height, .z = 0.0 };
 

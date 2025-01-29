@@ -8,7 +8,7 @@ pub const RGB = packed struct {
     b: u8,
 
     // TODO maybe there's a way of not needing the anytype?
-    pub fn printPPM(self: RGB, writer: anytype) !void {
+    pub fn printPPM(self: RGB, writer: std.io.AnyWriter) !void {
         try writer.print("{d} {d} {d}\n", .{ self.r, self.g, self.b });
     }
 

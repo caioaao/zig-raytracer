@@ -15,7 +15,7 @@ pub fn main() !void {
 
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    const stdout = bw.writer().any();
 
     var world = HittableList.init(allocator);
     defer world.deinit();
