@@ -3,6 +3,9 @@ const std = @import("std");
 const Point3 = @import("./vec3.zig").Point3;
 const Vec3 = @import("./vec3.zig").Vec3;
 const Ray = @import("./ray.zig").Ray;
+const RGB = @import("./color.zig").RGB;
+const Hittable = @import("./hittable.zig").Hittable;
+const Interval = @import("./interval.zig").Interval;
 
 pub const AspectRatio = packed struct {
     x: u32,
@@ -35,7 +38,24 @@ pub const Camera = struct {
         };
     }
 
-    pub fn renderPPM(self: Camera, writer: anytype) !void {
+    pub fn ray_color(_: Camera, ray: Ray, world: Hittable) RGB {
+        if (world.hit(ray, Interval{ .min = 0, .max = std.math.inf(f64) })) |hit_record| {
+            return RGB.newFromRatios(
+                (hit_record.normal.x + 1) * 0.5,
+                (hit_record.normal.y + 1) * 0.5,
+                (hit_record.normal.z + 1) * 0.5,
+            );
+        }
+
+        const a = ray.direction.y * 0.5 + 0.5;
+        return RGB.newFromRatios(
+            (1.0 - a) + a * 0.5,
+            (1.0 - a) + a * 0.7,
+            (1.0 - a) + a * 1.0,
+        );
+    }
+
+    pub fn renderPPM(self: Camera, world: Hittable, writer: anytype) !void {
         const viewport_u = Vec3{ .x = self.viewport.width, .y = 0.0, .z = 0.0 };
         const viewport_v = Vec3{ .x = 0.0, .y = -self.viewport.height, .z = 0.0 };
 
@@ -54,7 +74,7 @@ pub const Camera = struct {
                 const pixel_center = pixel00_loc.add(pixel_delta_u.scale(@as(f64, @floatFromInt(i)))).add(pixel_delta_v.scale(@as(f64, @floatFromInt(j))));
                 const ray = Ray{ .origin = self.center, .direction = pixel_center.sub(self.center) };
 
-                const pixel_color = ray.color();
+                const pixel_color = self.ray_color(ray, world);
                 try pixel_color.printPPM(writer);
             }
         }

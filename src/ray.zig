@@ -2,6 +2,7 @@ const std = @import("std");
 const Vec3 = @import("./vec3.zig").Vec3;
 const Point3 = @import("./vec3.zig").Point3;
 const RGB = @import("./color.zig").RGB;
+const HittableList = @import("./hittable.zig").HittableList;
 
 pub const Ray = struct {
     origin: Point3,

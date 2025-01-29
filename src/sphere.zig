@@ -4,13 +4,14 @@ const HitRecord = @import("./hittable.zig").HitRecord;
 const Vec3 = @import("./vec3.zig").Vec3;
 const Point3 = @import("./vec3.zig").Point3;
 const Ray = @import("./ray.zig").Ray;
+const Interval = @import("./interval.zig").Interval;
 
 pub const Sphere = struct {
     center: Point3,
     radius: f64,
 
     pub fn new(center: Point3, radius: f64) Sphere {
-        .{ .center = center, .radius = std.math.fmax(0, radius) };
+        return .{ .center = center, .radius = @max(0, radius) };
     }
 
     pub fn hittable(self: *Sphere) Hittable {
@@ -22,7 +23,7 @@ pub const Sphere = struct {
         };
     }
 
-    fn hit(ctx: *anyopaque, ray: Ray, rayTMin: f64, rayTMax: f64) ?HitRecord {
+    fn hit(ctx: *anyopaque, ray: Ray, ray_t: Interval) ?HitRecord {
         const self: *Sphere = @ptrCast(@alignCast(ctx));
 
         const oc = self.center.sub(ray.origin);
@@ -37,10 +38,10 @@ pub const Sphere = struct {
 
         // Find the nearest root that lies in the acceptable range.
         var root = (h - sqrtd) / a;
-        if (root <= rayTMin or rayTMax <= root) {
+        if (!ray_t.surrounds(root)) {
             root = (h + sqrtd) / a;
-            if (root <= rayTMin or rayTMax <= root) {
-                return false;
+            if (!ray_t.surrounds(root)) {
+                return null;
             }
         }
 
@@ -51,6 +52,7 @@ pub const Sphere = struct {
             .t = root,
             .p = hit_point,
             .normal = if (front_face) outward_normal else outward_normal.reverse(),
+            .front_face = front_face,
         };
     }
 };
