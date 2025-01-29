@@ -5,6 +5,10 @@ pub const Vec3 = packed struct {
     y: f64,
     z: f64,
 
+    pub fn new(x: f64, y: f64, z: f64) Vec3 {
+        return .{ .x = x, .y = y, .z = z };
+    }
+
     pub fn add(self: Vec3, other: Vec3) Vec3 {
         return Vec3{
             .x = self.x + other.x,

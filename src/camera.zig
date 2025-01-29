@@ -24,6 +24,7 @@ pub const Camera = struct {
     viewport: Viewport,
     focal_length: f64 = 1.0,
     center: Point3 = Point3{ .x = 0.0, .y = 0.0, .z = 0.0 },
+    samples_per_pixel: u8 = 10,
 
     pub fn init(image_width_: u32, aspect_ratio_: AspectRatio) Camera {
         const image_height_ = deriveImageHeight(image_width_, aspect_ratio_);
@@ -38,17 +39,13 @@ pub const Camera = struct {
         };
     }
 
-    pub fn ray_color(_: Camera, ray: Ray, world: Hittable) RGB {
+    pub fn rayColorIntensity(_: Camera, ray: Ray, world: Hittable) Vec3 {
         if (world.hit(ray, Interval{ .min = 0, .max = std.math.inf(f64) })) |hit_record| {
-            return RGB.newFromRatios(
-                (hit_record.normal.x + 1) * 0.5,
-                (hit_record.normal.y + 1) * 0.5,
-                (hit_record.normal.z + 1) * 0.5,
-            );
+            return hit_record.normal.add(Vec3.new(1, 1, 1)).scale(0.5);
         }
 
         const a = ray.direction.y * 0.5 + 0.5;
-        return RGB.newFromRatios(
+        return Vec3.new(
             (1.0 - a) + a * 0.5,
             (1.0 - a) + a * 0.7,
             (1.0 - a) + a * 1.0,
@@ -71,11 +68,17 @@ pub const Camera = struct {
             std.debug.print("Scanlines remaining: {d}\n", .{self.image_height - j});
 
             for (0..self.image_width) |i| {
-                const pixel_center = pixel00_loc.add(pixel_delta_u.scale(@as(f64, @floatFromInt(i)))).add(pixel_delta_v.scale(@as(f64, @floatFromInt(j))));
-                const ray = Ray{ .origin = self.center, .direction = pixel_center.sub(self.center) };
+                var pixel_color_intensity = Vec3.new(0, 0, 0);
+                for (0..self.samples_per_pixel) |_| {
+                    const pixel_center = pixel00_loc.add(pixel_delta_u.scale(@as(f64, @floatFromInt(i)))).add(pixel_delta_v.scale(@as(f64, @floatFromInt(j))));
+                    const ray = Ray{ .origin = self.center, .direction = pixel_center.sub(self.center) };
 
-                const pixel_color = self.ray_color(ray, world);
-                try pixel_color.printPPM(writer);
+                    const sample = self.rayColorIntensity(ray, world);
+                    pixel_color_intensity = pixel_color_intensity.add(sample);
+                }
+                pixel_color_intensity = pixel_color_intensity.scale(1.0 / @as(f64, @floatFromInt(self.samples_per_pixel)));
+                const color = RGB.newFromIntensityVector(pixel_color_intensity);
+                try color.printPPM(writer);
             }
         }
 

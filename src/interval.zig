@@ -23,6 +23,12 @@ pub const Interval = packed struct {
         return self.min < x and self.max > x;
     }
 
+    pub fn clamp(self: Interval, x: f64) f64 {
+        if (x < self.min) return self.min;
+        if (x > self.max) return self.max;
+        return x;
+    }
+
     pub const EMPTY = Interval.new();
     pub const UNIVERSE = Interval{ .min = -std.math.inf(f64), .max = std.math.inf(f64) };
 };
