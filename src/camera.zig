@@ -15,6 +15,17 @@ pub const AspectRatio = packed struct {
 pub const Viewport = packed struct {
     width: f64,
     height: f64,
+    u: Vec3,
+    v: Vec3,
+
+    pub fn new(width: f64, height: f64) Viewport {
+        return .{
+            .width = width,
+            .height = height,
+            .u = Vec3{ .x = width, .y = 0.0, .z = 0.0 },
+            .v = Vec3{ .x = 0.0, .y = -height, .z = 0.0 },
+        };
+    }
 };
 
 pub const Camera = struct {
@@ -22,20 +33,37 @@ pub const Camera = struct {
     image_height: u32,
     aspect_ratio: AspectRatio,
     viewport: Viewport,
-    focal_length: f64 = 1.0,
-    center: Point3 = Point3{ .x = 0.0, .y = 0.0, .z = 0.0 },
+    focal_length: f64,
+    center: Point3,
     samples_per_pixel: u8 = 10,
+
+    pixel_delta_u: Vec3,
+    pixel_delta_v: Vec3,
+    pixel00_loc: Point3,
 
     pub fn init(image_width_: u32, aspect_ratio_: AspectRatio) Camera {
         const image_height_ = deriveImageHeight(image_width_, aspect_ratio_);
+        const viewport = Viewport.new(
+            2.0 * @as(f64, @floatFromInt(image_width_)) / @as(f64, @floatFromInt(image_height_)),
+            2.0,
+        );
+        const center = Point3{ .x = 0.0, .y = 0.0, .z = 0.0 };
+        const focal_length: f64 = 1.0;
+        const viewport_upper_left = center.sub((Vec3{ .x = 0.0, .y = 0.0, .z = focal_length }).add(viewport.u.scale(0.5)).add(viewport.v.scale(0.5)));
+
+        const pixel_delta_u = viewport.u.scale(1.0 / @as(f64, @floatFromInt(image_width_)));
+        const pixel_delta_v = viewport.v.scale(1.0 / @as(f64, @floatFromInt(image_height_)));
+
         return Camera{
             .image_width = image_width_,
             .image_height = image_height_,
             .aspect_ratio = aspect_ratio_,
-            .viewport = Viewport{
-                .width = 2.0 * @as(f64, @floatFromInt(image_width_)) / @as(f64, @floatFromInt(image_height_)),
-                .height = 2.0,
-            },
+            .viewport = viewport,
+            .focal_length = focal_length,
+            .center = center,
+            .pixel_delta_u = pixel_delta_u,
+            .pixel_delta_v = pixel_delta_v,
+            .pixel00_loc = viewport_upper_left.add(pixel_delta_u.scale(0.5)).add(pixel_delta_v.scale(0.5)),
         };
     }
 
@@ -53,15 +81,6 @@ pub const Camera = struct {
     }
 
     pub fn renderPPM(self: Camera, world: Hittable, writer: std.io.AnyWriter) !void {
-        const viewport_u = Vec3{ .x = self.viewport.width, .y = 0.0, .z = 0.0 };
-        const viewport_v = Vec3{ .x = 0.0, .y = -self.viewport.height, .z = 0.0 };
-
-        const pixel_delta_u = viewport_u.scale(1.0 / @as(f64, @floatFromInt(self.image_width)));
-        const pixel_delta_v = viewport_v.scale(1.0 / @as(f64, @floatFromInt(self.image_height)));
-
-        const viewport_upper_left = self.center.sub((Vec3{ .x = 0.0, .y = 0.0, .z = self.focal_length }).add(viewport_u.scale(0.5)).add(viewport_v.scale(0.5)));
-        const pixel00_loc = viewport_upper_left.add(pixel_delta_u.scale(0.5)).add(pixel_delta_v.scale(0.5));
-
         try writer.print("P3\n{d} {d}\n255\n", .{ self.image_width, self.image_height });
 
         for (0..self.image_height) |j| {
@@ -70,8 +89,7 @@ pub const Camera = struct {
             for (0..self.image_width) |i| {
                 var pixel_color_intensity = Vec3.new(0, 0, 0);
                 for (0..self.samples_per_pixel) |_| {
-                    const pixel_center = pixel00_loc.add(pixel_delta_u.scale(@as(f64, @floatFromInt(i)))).add(pixel_delta_v.scale(@as(f64, @floatFromInt(j))));
-                    const ray = Ray{ .origin = self.center, .direction = pixel_center.sub(self.center) };
+                    const ray = self.getRay(i, j);
 
                     const sample = self.rayColorIntensity(ray, world);
                     pixel_color_intensity = pixel_color_intensity.add(sample);
@@ -83,6 +101,11 @@ pub const Camera = struct {
         }
 
         std.debug.print("Done.\n", .{});
+    }
+
+    fn getRay(self: Camera, i: usize, j: usize) Ray {
+        const pixel_center = self.pixel00_loc.add(self.pixel_delta_u.scale(@as(f64, @floatFromInt(i)))).add(self.pixel_delta_v.scale(@as(f64, @floatFromInt(j))));
+        return Ray{ .origin = self.center, .direction = pixel_center.sub(self.center) };
     }
 };
 
