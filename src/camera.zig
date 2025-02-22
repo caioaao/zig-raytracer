@@ -72,7 +72,7 @@ pub const Camera = struct {
 
     pub fn rayColorIntensity(self: Camera, ray: Ray, bouncesLeft: usize, world: Hittable) Vec3 {
         if (bouncesLeft <= 0) return Vec3.new(0, 0, 0);
-        if (world.hit(ray, Interval{ .min = 0, .max = std.math.inf(f64) })) |hit_record| {
+        if (world.hit(ray, Interval{ .min = 0.001, .max = std.math.inf(f64) })) |hit_record| {
             const direction = Vec3.randomOnHemisphere(self.rand, hit_record.normal);
             return rayColorIntensity(self, Ray.new(hit_record.p, direction), bouncesLeft - 1, world).scale(0.5);
         }
