@@ -8,9 +8,11 @@ pub const RGB = packed struct {
     g: u8,
     b: u8,
 
-    // TODO maybe there's a way of not needing the anytype?
     pub fn printPPM(self: RGB, writer: std.io.AnyWriter) !void {
-        try writer.print("{d} {d} {d}\n", .{ self.r, self.g, self.b });
+        const r = self.r;
+        const g = self.g;
+        const b = self.b;
+        try writer.print("{d} {d} {d}\n", .{ r, g, b });
     }
 
     pub fn new(r: u8, g: u8, b: u8) RGB {
@@ -18,14 +20,17 @@ pub const RGB = packed struct {
     }
 
     pub fn newFromIntensityVector(v: Vec3) RGB {
-        return new(byteFromRatio(v.x), byteFromRatio(v.y), byteFromRatio(v.z));
+        const r = byteFromRatio(linearToGamma(v.x));
+        const g = byteFromRatio(linearToGamma(v.y));
+        const b = byteFromRatio(linearToGamma(v.z));
+        return new(r, g, b);
     }
 
     pub fn intensityVector(self: RGB) Vec3 {
         return Vec3.new(
-            ratioFromByte(self.r),
-            ratioFromByte(self.g),
-            ratioFromByte(self.b),
+            gammaToLinear(ratioFromByte(self.r)),
+            gammaToLinear(ratioFromByte(self.g)),
+            gammaToLinear(ratioFromByte(self.b)),
         );
     }
 };
@@ -41,4 +46,13 @@ fn byteFromRatio(ratio: f64) u8 {
 
 fn ratioFromByte(b: u8) f64 {
     return @as(f64, @floatFromInt(b)) / 255.999;
+}
+
+inline fn linearToGamma(linear_component: f64) f64 {
+    if (linear_component > 0) return std.math.sqrt(linear_component);
+    return 0;
+}
+
+inline fn gammaToLinear(gamma_component: f64) f64 {
+    return gamma_component * gamma_component;
 }
