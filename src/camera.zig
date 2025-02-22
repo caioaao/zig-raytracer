@@ -36,6 +36,7 @@ pub const Camera = struct {
     focal_length: f64,
     center: Point3,
     samples_per_pixel: u8 = 10,
+    max_ray_bounces: usize = 50,
 
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
@@ -69,10 +70,11 @@ pub const Camera = struct {
         };
     }
 
-    pub fn rayColorIntensity(camera: Camera, ray: Ray, world: Hittable) Vec3 {
+    pub fn rayColorIntensity(self: Camera, ray: Ray, bouncesLeft: usize, world: Hittable) Vec3 {
+        if (bouncesLeft <= 0) return Vec3.new(0, 0, 0);
         if (world.hit(ray, Interval{ .min = 0, .max = std.math.inf(f64) })) |hit_record| {
-            const direction = Vec3.randomOnHemisphere(camera.rand, hit_record.normal);
-            return rayColorIntensity(camera, Ray.new(hit_record.p, direction), world).scale(0.5);
+            const direction = Vec3.randomOnHemisphere(self.rand, hit_record.normal);
+            return rayColorIntensity(self, Ray.new(hit_record.p, direction), bouncesLeft - 1, world).scale(0.5);
         }
 
         const a = ray.direction.y * 0.5 + 0.5;
@@ -94,7 +96,7 @@ pub const Camera = struct {
                 for (0..self.samples_per_pixel) |_| {
                     const ray = self.getRay(i, j);
 
-                    const sample = self.rayColorIntensity(ray, world);
+                    const sample = self.rayColorIntensity(ray, self.max_ray_bounces, world);
                     pixel_color_intensity = pixel_color_intensity.add(sample);
                 }
                 pixel_color_intensity = pixel_color_intensity.scale(1.0 / @as(f64, @floatFromInt(self.samples_per_pixel)));
