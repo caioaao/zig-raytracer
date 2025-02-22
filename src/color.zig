@@ -25,14 +25,6 @@ pub const RGB = packed struct {
         const b = byteFromRatio(linearToGamma(v.z));
         return new(r, g, b);
     }
-
-    pub fn intensityVector(self: RGB) Vec3 {
-        return Vec3.new(
-            gammaToLinear(ratioFromByte(self.r)),
-            gammaToLinear(ratioFromByte(self.g)),
-            gammaToLinear(ratioFromByte(self.b)),
-        );
-    }
 };
 
 const INTENSITY = Interval{ .min = 0, .max = 0.999 };
