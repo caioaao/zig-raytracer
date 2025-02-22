@@ -1,4 +1,5 @@
 const std = @import("std");
+const boundedFloat = @import("./random.zig").boundedFloat;
 
 pub const Vec3 = packed struct {
     x: f64,
@@ -7,6 +8,33 @@ pub const Vec3 = packed struct {
 
     pub fn new(x: f64, y: f64, z: f64) Vec3 {
         return .{ .x = x, .y = y, .z = z };
+    }
+
+    pub fn random(rand: std.Random) Vec3 {
+        return new(rand.float(f64), rand.float(f64), rand.float(f64));
+    }
+
+    pub fn boundedRandom(rand: std.Random, min: f64, max: f64) Vec3 {
+        return new(boundedFloat(f64, rand, min, max), boundedFloat(f64, rand, min, max), boundedFloat(f64, rand, min, max));
+    }
+
+    pub fn randomUnit(rand: std.Random) Vec3 {
+        for (0..100) |_| {
+            const p = boundedRandom(rand, -1, 1);
+            const lensq = p.lengthSquared();
+            if ((1e-160 < lensq) and (lensq <= 1)) {
+                return p.scale(1.0 / std.math.sqrt(lensq));
+            }
+        }
+        unreachable;
+    }
+
+    pub fn randomOnHemisphere(rand: std.Random, normal: Vec3) Vec3 {
+        const on_unit_sphere = randomUnit(rand);
+        if (dot(on_unit_sphere, normal) > 0.0) {
+            return on_unit_sphere;
+        }
+        return reverse(on_unit_sphere);
     }
 
     pub fn add(self: Vec3, other: Vec3) Vec3 {

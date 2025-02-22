@@ -69,9 +69,10 @@ pub const Camera = struct {
         };
     }
 
-    pub fn rayColorIntensity(_: Camera, ray: Ray, world: Hittable) Vec3 {
+    pub fn rayColorIntensity(camera: Camera, ray: Ray, world: Hittable) Vec3 {
         if (world.hit(ray, Interval{ .min = 0, .max = std.math.inf(f64) })) |hit_record| {
-            return hit_record.normal.add(Vec3.new(1, 1, 1)).scale(0.5);
+            const direction = Vec3.randomOnHemisphere(camera.rand, hit_record.normal);
+            return rayColorIntensity(camera, Ray.new(hit_record.p, direction), world).scale(0.5);
         }
 
         const a = ray.direction.y * 0.5 + 0.5;
